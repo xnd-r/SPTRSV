@@ -1,7 +1,7 @@
-#include "include/utils.h"
-#include "include/core.h"
-#include "include/sptrsv_syncfree_serialref.h"
-#include "include/sptrsv_syncfree_opencl.h"
+#include "utils.h"
+#include "core.h"
+#include "sptrsv_syncfree_serialref.h"
+#include "sptrsv_syncfree_opencl.h"
 
 double read_csr(const char* filename, int* n, unsigned long long* nz, uint64_t** row_index, int** col, double** val) {
 	DEBUG_INFO("Matrix: %s\n", filename);

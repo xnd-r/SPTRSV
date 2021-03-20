@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
-#include "include/utils.h"
+#include "utils.h"
 
 double base_gauss_lower(int n, double* val, uint64_t* row_index, int* col, double* x, double* b);
 double base_gauss_upper(int n, double* val, uint64_t* row_index, int* col, double* x, double* b);

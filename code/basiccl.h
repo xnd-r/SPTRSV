@@ -1,11 +1,7 @@
 #ifndef BASICCL_H
 #define BASICCL_H
 
-#ifdef __APPLE__
-#include "OpenCL/opencl.h"
-#else
 #include "CL/opencl.h"
-#endif
 
 #define CL_STRING_LENGTH 128
 

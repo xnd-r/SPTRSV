@@ -1,4 +1,4 @@
-#include "include/core.h"
+#include "core.h"
 
 double base_gauss_lower(int n, double* val, uint64_t* row_index, int* col, double* x, double* b) {
 	double sum;

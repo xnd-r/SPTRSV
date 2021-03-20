@@ -3,8 +3,8 @@
 
 
 #include <iostream>
-#include "include/utils.h"
-#include "include/sptrsv_syncfree_serialref.h"
+#include "utils.h"
+#include "sptrsv_syncfree_serialref.h"
 //#define DEBUG_INFO(fmt, ...) fprintf(stderr, "\n%s_%s\t%s:%d:%s(): " fmt, __DATE__, __TIME__, __FILE__, __LINE__, __func__, __VA_ARGS__)
 //#define DEBUG_INFO(f, args...) fprintf(stderr, "%s_%s\t%s:%d:%s():\t\t\t" f, __DATE__, __TIME__, __FILE__, __LINE__, __func__, ##args);
 
