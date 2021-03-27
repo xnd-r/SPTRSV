@@ -15,8 +15,8 @@ int main(int argc, char** argv) {
     const char* algo_type = argv[1];
 
 	run("forward", algo_type,
-     "/home/aromanov/devel/projects/sparse/matrices/bin/parabolic_fem.bin",
-     "/home/aromanov/devel/projects/sparse/matrices/bin/parabolic_fem_snodes.bin",
+     "/home/romanov_a/repos/SPTRSV/matrices/bin/parabolic_fem.bin",
+     "/home/romanov_a/repos/SPTRSV/matrices/bin/parabolic_fem_snodes.bin",
 		&n, &nz,
 		&row, &col, &val,
 		&row_pad, &col_pad, &val_pad,
