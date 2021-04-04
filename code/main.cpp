@@ -1,55 +1,58 @@
 #include "utils.h"
 
-int main(int argc, char** argv) {
-	//if (argc < 4) {
-	//	std::cout << "Usage:\n\ntask_type (can be \"forward\", \"full\")\n";
-	//	std::cout << "algo_type (can be \"base\", \"custom\", \"blas\")\n";
-	//	std::cout << "matrix (can be *.mtx, *.bin, *.txt)" << std::endl;
-	//	return 1;
-	//}
-	double *x, *b, *val, *val_pad, *val_t;
-	int n, *col, *col_pad, *col_t, sn, *snodes;
-	unsigned long long nz;
-	uint64_t *row, *row_pad, *row_t;
+int main(int argc, char **argv) {
+  if (argc < 5) {
+    std::cout << "Usage:\n\nalgo_type (can be \"base\", \"custom\", \"blas\", "
+                 "\"barrier\", \"syncfree\")\n";
+    std::cout << "full path to matrix-file (can be *.mtx, *.bin, *.txt)"
+              << std::endl;
+    std::cout << "full path to supernodes-file (can be *.bin)" << std::endl;
+    std::cout << "nthreads " << std::endl;
+    std::cout << "check" << std::endl;
+    return 1;
+  }
+  double *x, *b, *val, *val_pad, *val_t;
+  int n, *col, *col_pad, *col_t, sn, *snodes;
+  unsigned long long nz;
+  uint64_t *row, *row_pad, *row_t;
 
-    const char* algo_type = argv[1];
+  const char *algo_type = argv[1];
+  const char *mtx_path = argv[2];
+  const char *snodes_path = argv[3];
+  const int nthreads = std::atoi(argv[4]);
 
-	run("forward", algo_type,
-     "/home/romanov_a/repos/SPTRSV/matrices/bin/parabolic_fem.bin",
-     "/home/romanov_a/repos/SPTRSV/matrices/bin/parabolic_fem_snodes.bin",
-		&n, &nz,
-		&row, &col, &val,
-		&row_pad, &col_pad, &val_pad,
-		&row_t, &col_t, &val_t,
-		&x, &b, &sn, &snodes);
-	//run("forward", algo_type, "csr_6_upper.txt", "csr_6_upper_snodes.txt", &n, &nz, &row, &col, &val, &row_pad, &col_pad, &val_pad, &x, &b, &sn, &snodes);
+  run("forward", algo_type, mtx_path, snodes_path, &n, &nz, &row, &col, &val,
+      &row_pad, &col_pad, &val_pad, &row_t, &col_t, &val_t, &x, &b, &sn,
+      &snodes, nthreads);
 
-	double* x_check = new double[n] { 0. };
+  if (argc == 6){
+    const char* is_check = argv[5];
+    if (strcmp(is_check, "check") == 0){
+      double *x_check = new double[n]{0.};
+      int *int_row = new int[n + 1];
+      for (int i = 0; i <= n; ++i) {
+        int_row[i] = (int)row[i];
+      }
+      compare("forward", n, int_row, col, val, x, b, x_check);
+      delete[] x_check;
+      delete[] int_row;
+    }
+  }
 
-
-	int* int_row = new int[n + 1];
-	for (int i = 0; i <= n; ++i) {
-		int_row[i] = (int)row[i];
-	}
-
-	compare("forward", n, int_row, col, val, x, b, x_check);
-	
-	free(x);
-	free(b);
-	free(val);
-	free(col);
-	free(row);
-	if (strcmp(algo_type, "blas") == 0) {
-		free(val_pad);
-		free(col_pad);
-		free(row_pad);
-	}
-	//if (strcmp(algo_type, "syncfree") == 0) {
-	//	free(val_t);
-	//	free(col_t);
-	//	free(row_t);
-	//}
-	delete[] int_row;
-	delete[] x_check;
-	return 0;
+  free(x);
+  free(b);
+  free(val);
+  free(col);
+  free(row);
+  if (strcmp(algo_type, "blas") == 0) {
+    free(val_pad);
+    free(col_pad);
+    free(row_pad);
+  }
+  // if (strcmp(algo_type, "syncfree") == 0) {
+  //	free(val_t);
+  //	free(col_t);
+  //	free(row_t);
+  //}
+  return 0;
 }

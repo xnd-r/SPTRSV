@@ -108,7 +108,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     FILE* fp;
     char* source_str;
     size_t source_size;
-    fp = fopen("/home/romanov_a/repos/SPTRSV/code/kernel_full.cl", "r");
+    fp = fopen("/home/aromanov/devel/projects/sparse/src/kernel_full.cl", "r");
     if (!fp) {
         DEBUG_INFO("Failed to load kernel. Exit\n");
         exit(1);
