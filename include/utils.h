@@ -7,7 +7,6 @@
 #include <string.h>
 #include <cmath>
 
-//#define DEBUG_INFO(fmt, ...) fprintf(stderr, "\n%s_%s\t%s:%d:%s(): " fmt, __DATE__, __TIME__, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define DEBUG_INFO(f, args...) fprintf(stderr, "%s_%s\t%s:%d:%s():\t\t" f, __DATE__, __TIME__, __FILE__, __LINE__, __func__, ##args);
 
 
@@ -17,17 +16,15 @@ double fill_x_b(int n, double** x, double** b);
 
 void transpose(int n, unsigned long long nz, double*& val, uint64_t*& row, int*& col_index,
 	double*& val_t, uint64_t*& row_t, int*& col_index_t);
-	
-//void run(const char* task_type, const char* algo_type, const char* matrix_file, const char* snodes_file,
-//	int* n, unsigned long long* nz, uint64_t** row, int** col, double** val,
-//	uint64_t** row_T, int** col_T, double** val_T, double** x, double** b, int* sn, int** snodes);
+
 
 void run(const char* task_type, const char* algo_type, const char* matrix_file, const char* snodes_file,
 	int* n, unsigned long long* nz,
 	uint64_t** row, int** col, double** val,
 	uint64_t** row_pad, int** col_index_pad, double** val_pad,
 	uint64_t** row_t, int** col_t, double** val_t,
-	double** x, double** b, int* sn, int** snodes);
+	double** x, double** b, int* sn, int** snodes,
+	int nthreads);
 
 void check_result(int n, double* x1, double* x2);
 void compare(const char* task_type, int n, int* row, int* col, double* val, double* x, double* b, double* x_custom);
