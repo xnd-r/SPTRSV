@@ -128,7 +128,8 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 	uint64_t** row, int** col, double** val,
 	uint64_t** row_pad, int** col_index_pad, double** val_pad,
 	uint64_t** row_t, int** col_t, double** val_t,
-	double** x, double** b, int* sn, int** snodes) {
+	double** x, double** b, int* sn, int** snodes,
+	int nthreads) {
 	srand(42);
 	if (strcmp(task_type, "forward") == 0) { // m. b. need refactoring
 		DEBUG_INFO("Task: Ux = b\n");
@@ -172,10 +173,9 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_base_gauss_upper);
 		}
 		else if (strcmp(algo_type, "barrier") == 0) {
-            int n_threads = omp_get_max_threads();
             DEBUG_INFO("Algorithm: Barrier\n");
-            DEBUG_INFO("Number of threads: %d\n", n_threads);
-			double t_barrier_upper = gaussBarrierUp(*n, *x, *b, *val, *col, *row, n_threads);
+            DEBUG_INFO("Number of threads: %d\n", nthreads);
+			double t_barrier_upper = gaussBarrierUp(*n, *x, *b, *val, *col, *row, nthreads);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_barrier_upper);
 		}
 		else if (strcmp(algo_type, "syncfree") == 0) {
