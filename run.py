@@ -27,7 +27,7 @@ def get_times(filename, algos, matrices, repeats, threads):
 	run_name = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
 	os.makedirs(os.path.join("experiments", run_name))
 	global_log = ""
-	prefix = "srun -N 1 -p gpu "
+	prefix = "srun -N 1 -p gpu -t 720 "
 	with open(os.path.join("experiments", run_name, "times.csv"), "w") as f:
 		f.write(";")
 		for a in algos:
@@ -36,12 +36,14 @@ def get_times(filename, algos, matrices, repeats, threads):
 		for m in matrices:
 			print(m)
 			f.write(os.path.basename(m) + ";")
-			snodes = m[:-4] + "_snodes.bin"
+			snodes = m[:-6] + "snodes"
 			for a in algos:
 				print(a)
 				string = prefix + os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + "1")
+				print(string)
 				log, time = min_res(string, repeats=repeats)
 				global_log += log
+				print(log)
 				global_log += "-"*100+"\n"
 				f.write(str(time) + ";")
 			f.write("\n")
@@ -52,10 +54,10 @@ def main():
 	filename = os.path.join("code", "SPTRSV")
 	algos = ["base", "custom", "blas"]
 	threads = [1, 2, 4, 8, 16, 24, 32]
-	matrices = glob(os.path.join("matrices", "bin", "*"))
+	matrices = glob(os.path.join(os.getcwd(), "matrices", "bin", "*"))
 	assert len(matrices) % 2 == 0
-	matrices = list(filter(lambda x: not x.endswith('_snodes.bin'), matrices))
-	repeats = 5
+	matrices = list(filter(lambda x: not x.endswith('.snodes'), matrices))
+	repeats = 3
 
 	get_times(filename, algos, matrices, repeats, threads)
 
