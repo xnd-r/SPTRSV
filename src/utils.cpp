@@ -1,7 +1,6 @@
 #include "include/utils.h"
-#include "include/core.h"
-#include "include/sptrsv_syncfree_serialref.h"
-#include "include/sptrsv_syncfree_opencl.h"
+#include <iostream>
+
 
 double read_csr(const char* filename, int* n, unsigned long long* nz, uint64_t** row_index, int** col, double** val) {
 	DEBUG_INFO("Matrix: %s\n", filename);
@@ -10,7 +9,8 @@ double read_csr(const char* filename, int* n, unsigned long long* nz, uint64_t**
 	std::string ext = file_name.substr(file_name.find_last_of(".") + 1);
 
 	double t1 = omp_get_wtime();
-	if (ext == "bin") {
+
+	if (ext == "matrix") {
 		FILE* f;
 		f = fopen(filename, "rb");
 		// add success open
@@ -53,7 +53,7 @@ void read_snodes(const char* filename, int* sn, int** snodes) {
 	std::string file_name(filename);
 	std::string ext = file_name.substr(file_name.find_last_of(".") + 1);
 
-	if (ext == "bin") {
+	if (ext == "snodes") {
 		FILE* f;
 		f = fopen(filename, "rb");
 

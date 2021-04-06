@@ -37,7 +37,7 @@ def get_times(filename, algos, matrices, repeats, threads):
 		for m in matrices:
 			print(m)
 			f.write(os.path.basename(m) + ";")
-			snodes = m[:-4] + "_snodes.bin"
+			snodes = m[:-6] + "snodes"
 			for a in algos:
 				print(a)
 				string = os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + "1")
@@ -55,7 +55,7 @@ def main():
 	threads = [1, 2, 4, 8, 16, 24, 32]
 	matrices = glob(os.path.join("matrices", "bin", "*"))
 	assert len(matrices) % 2 == 0
-	matrices = list(filter(lambda x: not x.endswith('_snodes.bin'), matrices))
+	matrices = list(filter(lambda x: not x.endswith('.snodes'), matrices))
 	repeats = 7
 
 	get_times(filename, algos, matrices, repeats, threads)

@@ -43,11 +43,17 @@ if(OpenMP_FOUND)
     message(STATUS "OpenMP Libraries: ${OpenMP_CXX_LIBRARIES}")
 endif()
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/gtest")
+set(LIBRARY_DEPS "gtest")
+
 get_filename_component(DIR_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 set(MODULE      "${DIR_NAME}")
 set(LIBRARY     "lib_${MODULE}")
 set(APPLICATION "app_${MODULE}")
+set(TESTS       "test_${MODULE}")
 
 
 add_subdirectory(src)
 add_subdirectory(app)
+add_subdirectory(test)
