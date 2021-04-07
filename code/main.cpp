@@ -3,7 +3,7 @@
 int main(int argc, char **argv) {
   if (argc < 5) {
     std::cout << "Usage:\n\nalgo_type (can be \"base\", \"custom\", \"blas\", "
-                 "\"barrier\", \"syncfree\")\n";
+                 "\"barrier\", \"syncfree\", \"mkl\")\n";
     std::cout << "full path to matrix-file (can be *.mtx, *.matrix, *.txt)"
               << std::endl;
     std::cout << "full path to supernodes-file (can be *.snodes)" << std::endl;

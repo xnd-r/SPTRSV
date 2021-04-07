@@ -163,7 +163,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 				double t_ccs2ccs_pad = ccs2ccs_pad(*val, *col, *row, *val_pad, *row_pad, *col_index_pad, *snodes, *sn, nz_pad);
 				DEBUG_INFO("Added %d elements in matrix. Padded-triangular format now. Time: %f\n", extra_mem, t_ccs2ccs_pad);
 
-;				double t_supernodal_blas_upper = supernodal_blas_upper(*n, nz_pad, *sn, *snodes, *x, *val_pad, *row_pad, *col_index_pad);
+				double t_supernodal_blas_upper = supernodal_blas_upper(*n, nz_pad, *sn, *snodes, *x, *val_pad, *row_pad, *col_index_pad);
 				DEBUG_INFO("Algorithm finished. Time: %f\n", t_supernodal_blas_upper);
 			}
 		}
@@ -221,6 +221,40 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			double t_sync_free = sptrsv_syncfree_opencl(
 				*col_t, row_t_int, *val_t, *n, *n, *nz, SUBSTITUTION_BACKWARD, 1, *x, *b);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
+		}
+		else if (strcmp(algo_type, "mkl") == 0) {
+			int *int_row = new int[*n + 1] {0};
+			for (int i = 0; i <= *n; ++i) {
+				int_row[i] = (int)*(*row+i);
+			}
+			struct matrix_descr descrA;
+			sparse_matrix_t csrA;
+			sparse_status_t status_csr = mkl_sparse_d_create_csr(&csrA, SPARSE_INDEX_BASE_ZERO,
+				*n,  // number of rows
+				*n,  // number of cols
+				int_row,
+				int_row + 1,
+				*col,
+				*val);
+
+			descrA.type = SPARSE_MATRIX_TYPE_TRIANGULAR;
+			descrA.mode = SPARSE_FILL_MODE_UPPER;
+			descrA.diag = SPARSE_DIAG_NON_UNIT;
+
+			DEBUG_INFO("Algorithm: mkl_sparse_d_trsv\n");
+			mkl_set_num_threads(nthreads);
+			// my_compute_using_mkl();
+			DEBUG_INFO("Number of threads: %d\n", nthreads);
+			double t1 = omp_get_wtime();
+			sparse_status_t status = mkl_sparse_d_trsv(SPARSE_OPERATION_NON_TRANSPOSE,
+				1.,
+				csrA,
+				descrA,
+				*b,
+				*x);
+			DEBUG_INFO("Algorithm finished. Time: %f\n", omp_get_wtime() - t1);
+			// std::cout << "Sparse_status_t: " << status << "\n";
+			delete[] int_row;
 		}
 		else {
 			std::cout << "\nUnknown algorithm " << algo_type << ". Exit\n";
