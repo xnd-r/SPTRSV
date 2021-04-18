@@ -219,7 +219,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			}
 
 			double t_sync_free = sptrsv_syncfree_opencl(
-				*col_t, row_t_int, *val_t, *n, *n, *nz, SUBSTITUTION_BACKWARD, 1, *x, *b);
+				*col_t, row_t_int, *val_t, *n, *n, *nz, *x, *b);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
 		}
 		else {
