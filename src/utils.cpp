@@ -77,13 +77,13 @@ void read_snodes(const char* filename, int* sn, int** snodes) {
 	}
 }
 
-double fill_x_b(int n, double** x, double** b) {
+double fill_x_b(int n, double** x, double** b, int rhs) {
 	double t1 = omp_get_wtime();
-	(*x) = (double*)malloc(n * sizeof(double));
-	(*b) = (double*)malloc(n * sizeof(double));
+	(*x) = (double*)malloc(n * sizeof(double) * rhs);
+	(*b) = (double*)malloc(n * sizeof(double) * rhs);
 
-#pragma omp parallel for num_threads(4)
-	for (int i = 0; i < n; ++i) {
+	#pragma omp parallel for num_threads(omp_get_max_threads())
+	for (int i = 0; i < n * rhs; ++i) {
 		//(*b)[i] = (*x)[i] = (double)rand() / RAND_MAX;
 		(*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
 	}
@@ -129,14 +129,15 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 	uint64_t** row_pad, int** col_index_pad, double** val_pad,
 	uint64_t** row_t, int** col_t, double** val_t,
 	double** x, double** b, int* sn, int** snodes,
-	int nthreads) {
+	int nthreads, int rhs) {
 	srand(42);
 	if (strcmp(task_type, "forward") == 0) { // m. b. need refactoring
-		DEBUG_INFO("Task: Ux = b\n");
+		DEBUG_INFO("Task: Ux = B\n");
+		DEBUG_INFO("Nuber of right sides: %d\n", rhs);
 
 		double t_read_csr = read_csr(matrix_file, n, nz, row, col, val);
 		DEBUG_INFO("Matrix read. Time: %f\n", t_read_csr);
-		double t_fill_x_b = fill_x_b(*n, x, b);
+		double t_fill_x_b = fill_x_b(*n, x, b, rhs);
 		DEBUG_INFO("Vectors x, b filled. Time: %f\n", t_fill_x_b);
 
 		if ((strcmp(algo_type, "custom") == 0) || (strcmp(algo_type, "blas") == 0)) {
@@ -144,7 +145,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			read_snodes(snodes_file, sn, snodes);
 			if (strcmp(algo_type, "custom") == 0) {
 				DEBUG_INFO("Algorithm: Supernodal custom\n");
-				double t_supernodal_upper = supernodal_upper(*sn, *snodes, *x, *val, *col, *row);
+				double t_supernodal_upper = supernodal_upper(*sn, *snodes, *x, *val, *col, *row, *n, rhs);
 				DEBUG_INFO("Algorithm finished. Time: %f\n", t_supernodal_upper);
 			}
 			else {
@@ -163,19 +164,19 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 				double t_ccs2ccs_pad = ccs2ccs_pad(*val, *col, *row, *val_pad, *row_pad, *col_index_pad, *snodes, *sn, nz_pad);
 				DEBUG_INFO("Added %d elements in matrix. Padded-triangular format now. Time: %f\n", extra_mem, t_ccs2ccs_pad);
 
-;				double t_supernodal_blas_upper = supernodal_blas_upper(*n, nz_pad, *sn, *snodes, *x, *val_pad, *row_pad, *col_index_pad);
+				double t_supernodal_blas_upper = supernodal_blas_upper(*n, nz_pad, *sn, *snodes, *x, *val_pad, *row_pad, *col_index_pad, rhs);
 				DEBUG_INFO("Algorithm finished. Time: %f\n", t_supernodal_blas_upper);
 			}
 		}
 		else if (strcmp(algo_type, "base") == 0) {
 			DEBUG_INFO("Algorithm: Base\n");
-			double t_base_gauss_upper = base_gauss_upper(*n, *val, *row, *col, *x, *b);
+			double t_base_gauss_upper = base_gauss_upper(*n, *val, *row, *col, *x, *b, rhs);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_base_gauss_upper);
 		}
 		else if (strcmp(algo_type, "barrier") == 0) {
             DEBUG_INFO("Algorithm: Barrier\n");
             DEBUG_INFO("Number of threads: %d\n", nthreads);
-			double t_barrier_upper = gaussBarrierUp(*n, *x, *b, *val, *col, *row, nthreads);
+			double t_barrier_upper = gaussBarrierUp(*n, *x, *b, *val, *col, *row, nthreads, rhs);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_barrier_upper);
 		}
 		else if (strcmp(algo_type, "syncfree") == 0) {
@@ -221,6 +222,40 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			double t_sync_free = sptrsv_syncfree_opencl(
 				*col_t, row_t_int, *val_t, *n, *n, *nz, *x, *b);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
+		}
+		else if (strcmp(algo_type, "mkl") == 0) {
+			int *int_row = new int[*n + 1] {0};
+			for (int i = 0; i <= *n; ++i) {
+				int_row[i] = (int)*(*row+i);
+			}
+			struct matrix_descr descrA;
+			sparse_matrix_t csrA;
+			sparse_status_t status_csr = mkl_sparse_d_create_csr(&csrA, SPARSE_INDEX_BASE_ZERO,
+				*n,  // number of rows
+				*n,  // number of cols
+				int_row,
+				int_row + 1,
+				*col,
+				*val);
+			descrA.type = SPARSE_MATRIX_TYPE_TRIANGULAR;
+			descrA.mode = SPARSE_FILL_MODE_UPPER;
+			descrA.diag = SPARSE_DIAG_NON_UNIT;
+
+			DEBUG_INFO("Algorithm: mkl_sparse_d_trsv\n");
+			mkl_set_num_threads(nthreads);
+			DEBUG_INFO("Number of threads: %d\n", nthreads);
+
+			double t1 = omp_get_wtime();
+			sparse_status_t status = mkl_sparse_d_trsv(SPARSE_OPERATION_NON_TRANSPOSE,
+				1.,
+				csrA,
+				descrA,
+				*b,
+				*x);
+			double t2 = omp_get_wtime();
+			DEBUG_INFO("Algorithm finished. Time: %f\n", t2 - t1);
+			// std::cout << "Sparse_status_t: " << status << "\n";
+			delete[] int_row;
 		}
 		else {
 			std::cout << "\nUnknown algorithm " << algo_type << ". Exit\n";

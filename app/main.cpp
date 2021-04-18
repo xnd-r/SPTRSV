@@ -1,13 +1,14 @@
 #include "include/utils.h"
 
 int main(int argc, char **argv) {
-  if (argc < 5) {
+  if (argc < 6) {
     std::cout << "Usage:\n\nalgo_type (can be \"base\", \"custom\", \"blas\", "
-                 "\"barrier\", \"syncfree\")\n";
+                 "\"barrier\", \"syncfree\", \"mkl\")\n";
     std::cout << "full path to matrix-file (can be *.mtx, *.matrix, *.txt)"
               << std::endl;
     std::cout << "full path to supernodes-file (can be *.snodes)" << std::endl;
     std::cout << "nthreads " << std::endl;
+    std::cout << "n right sides " << std::endl;
     std::cout << "check" << std::endl;
     return 1;
   }
@@ -20,15 +21,16 @@ int main(int argc, char **argv) {
   const char *mtx_path = argv[2];
   const char *snodes_path = argv[3];
   const int nthreads = std::atoi(argv[4]);
+  const int nrhs = std::atoi(argv[5]);
 
   run("forward", algo_type, mtx_path, snodes_path, &n, &nz, &row, &col, &val,
       &row_pad, &col_pad, &val_pad, &row_t, &col_t, &val_t, &x, &b, &sn,
-      &snodes, nthreads);
+      &snodes, nthreads, nrhs);
 
-  if (argc == 6){
-    const char* is_check = argv[5];
+  if (argc == 7){
+    const char* is_check = argv[6];
     if (strcmp(is_check, "check") == 0){
-      double *x_check = new double[n]{0.};
+      double *x_check = new double[n * nrhs]{0.};
       int *int_row = new int[n + 1];
       for (int i = 0; i <= n; ++i) {
         int_row[i] = (int)row[i];

@@ -1,7 +1,7 @@
 #include "include/common.h"
 #include "include/utils.h"
 #include "include/basiccl.h"
-#include "include/sptrsv_syncfree_opencl.h"
+#include "include/sptrsv_syncfree2_opencl.h"
 
 double sptrsv_syncfree2_opencl (int           *cscColPtrTR,
                             int           *cscRowIdxTR,
