@@ -13,8 +13,6 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
                                const int            m,
                                const int            n,
                                const int            nnzTR,
-                               const int            substitution,
-                               const int            rhs,
                                VALUE_TYPE    *x,
                                const VALUE_TYPE    *b);
 

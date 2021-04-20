@@ -58,7 +58,6 @@ void sptrsv_syncfree_opencl_executor(__global const int* d_cscColPtr,
     __global volatile int* d_graphInDegree,
     __global volatile VALUE_TYPE* d_left_sum,
     const int                      m,
-    const int                      substitution,
     __global const VALUE_TYPE* d_b,
     __global VALUE_TYPE* d_x,
     const int                      warp_per_block)

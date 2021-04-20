@@ -1,5 +1,5 @@
 //
-// Created by aromanov on 3/7/21.
+// Created by aromanov on 4/6/21.
 //
 
 #ifndef SPARSEPROJECT_SPTRSV_SYNCFREE2_OPENCL_H
@@ -13,8 +13,6 @@ double sptrsv_syncfree2_opencl (int           *cscColPtrTR,
                                const int            m,
                                const int            n,
                                const int            nnzTR,
-                               const int            substitution,
-                               const int            rhs,
                                VALUE_TYPE    *x,
                                const VALUE_TYPE    *b);
 

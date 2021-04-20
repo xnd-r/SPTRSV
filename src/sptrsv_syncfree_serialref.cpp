@@ -1,12 +1,6 @@
-//#ifndef _SPTRSV_SYNCFREE_SERIALREF_
-//#define _SPTRSV_SYNCFREE_SERIALREF_
-
-
 #include <iostream>
 #include "include/utils.h"
 #include "include/sptrsv_syncfree_serialref.h"
-//#define DEBUG_INFO(fmt, ...) fprintf(stderr, "\n%s_%s\t%s:%d:%s(): " fmt, __DATE__, __TIME__, __FILE__, __LINE__, __func__, __VA_ARGS__)
-//#define DEBUG_INFO(f, args...) fprintf(stderr, "%s_%s\t%s:%d:%s():\t\t\t" f, __DATE__, __TIME__, __FILE__, __LINE__, __func__, ##args);
 
 
 int sptrsv_syncfree_analyser(uint64_t   *cscRowIdx,
@@ -108,5 +102,3 @@ double sptrsv_syncfree_serialref(int           *cscColPtrTR,
     free(graphInDegree);
     return t_analyzer2 - t_analyzer1 + t_executor2 - t_executor1;
 }
-
-//#endif

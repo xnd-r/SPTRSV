@@ -18,9 +18,9 @@
 #define WARP_SIZE   64
 #endif
 
-//#ifndef WARP_PER_BLOCK
-//#define WARP_PER_BLOCK   5
-//#endif
+#ifndef WARP_PER_BLOCK
+#define WARP_PER_BLOCK   4
+#endif
 
 #define SUBSTITUTION_FORWARD  0
 #define SUBSTITUTION_BACKWARD 1
