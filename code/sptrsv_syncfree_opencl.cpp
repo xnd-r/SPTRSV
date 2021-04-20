@@ -9,13 +9,10 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
                             const int            m,
                             const int            n,
                             const int            nnzTR,
-                            const int            substitution,
-                            const int            rhs,
                                   VALUE_TYPE    *x,
                             const VALUE_TYPE    *b)
 {
-    const int device_id = 0;
-    const int opt = OPT_WARP_AUTO;
+    const int device_id = 1;
     if (m != n)
     {
         printf("This is not a square matrix, return.\n");
@@ -108,7 +105,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     FILE* fp;
     char* source_str;
     size_t source_size;
-    fp = fopen("/home/aromanov/devel/projects/sparse/src/kernel_full.cl", "r");
+    fp = fopen("./src/kernel_full.cl", "r");
     if (!fp) {
         DEBUG_INFO("Failed to load kernel. Exit\n");
         exit(1);
@@ -130,14 +127,31 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     // Build the program
 
     err = clBuildProgram(ocl_program_sptrsv, 0, NULL, "-cl-std=CL2.0 -D VALUE_TYPE=double", NULL, NULL);
-    
+    if (err != CL_SUCCESS) {
+      printf("Error: clBuildProgram() returned %d.\n", err);
+      size_t buildLogSize = 0;
+      clGetProgramBuildInfo(ocl_program_sptrsv, cdGpuDevices[device_id],
+                            CL_PROGRAM_BUILD_LOG, 0, NULL, &buildLogSize);
+      cl_char *buildLog = new cl_char[buildLogSize];
+      if (buildLog) {
+        clGetProgramBuildInfo(ocl_program_sptrsv, cdGpuDevices[device_id],
+                              CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog,
+                              NULL);
+        printf(">>> Build Log:\n");
+        printf("%s\n", buildLog);
+        printf("<<< End of Build Log\n");
+        std::cout << buildLog << std::endl;
+      }
+      exit(0);
+    }
+
     // Create kernels
     cl_kernel  ocl_kernel_sptrsv_analyser;
     cl_kernel  ocl_kernel_sptrsv_executor;
     ocl_kernel_sptrsv_analyser = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_analyser", &err);
-    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel ERROR CODE = %i\n", err); return err;}
+    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel analyzer ERROR CODE = %i\n", err); return err;}
     ocl_kernel_sptrsv_executor = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_executor", &err);
-    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel ERROR CODE = %i\n", err); return err;}
+    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel executor ERROR CODE = %i\n", err); return err;}
 
 
     // transfer host mem to device mem
@@ -147,6 +161,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     cl_mem      d_cscValTR;
     cl_mem      d_b;
     cl_mem      d_x;
+    const int rhs = 1;
 
     // Matrix L
     d_cscColPtrTR = clCreateBuffer(cxGpuContext, CL_MEM_READ_ONLY, (n+1) * sizeof(int), NULL, &err);
@@ -198,7 +213,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     size_t szLocalWorkSize[1];
     size_t szGlobalWorkSize[1];
 
-    int num_threads = 512;
+    int num_threads = 128;
     int num_blocks = ceil ((double)nnzTR / (double)num_threads);
 
     szLocalWorkSize[0]  = num_threads;
@@ -250,19 +265,6 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     if(err != CL_SUCCESS) {printf("OpenCL ERROR CODE = %i\n", err); return err;}
 
     // step 5: solve L*y = x
-    int start_divider = std::min(m, 8);
-    int min_divider = -1;
-    while (min_divider < 0) {
-        if (m % start_divider == 0) {
-            min_divider = start_divider;
-        }
-        start_divider++;
-    }
-    int WARP_PER_BLOCK = 1;
-
-    if (min_divider > 8) {
-        WARP_PER_BLOCK = min_divider; ///!!!!!!!!!!!!
-    }
     const int wpb = WARP_PER_BLOCK;
 
     err  = clSetKernelArg(ocl_kernel_sptrsv_executor, 0,  sizeof(cl_mem), (void*)&d_cscColPtrTR);
@@ -271,12 +273,11 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 3,  sizeof(cl_mem), (void*)&d_graphInDegree);
     err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 4,  sizeof(cl_mem), (void*)&d_left_sum);
     err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 5,  sizeof(cl_int), (void*)&m);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 6,  sizeof(cl_int), (void*)&substitution);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 7,  sizeof(cl_mem), (void*)&d_b);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 8,  sizeof(cl_mem), (void*)&d_x);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 9,  sizeof(cl_int) * WARP_PER_BLOCK, NULL);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 10, sizeof(VALUE_TYPE) * WARP_PER_BLOCK, NULL);
-    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 11, sizeof(cl_int), (void*)&wpb);
+    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 6,  sizeof(cl_mem), (void*)&d_b);
+    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 7,  sizeof(cl_mem), (void*)&d_x);
+    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 8,  sizeof(cl_int) * WARP_PER_BLOCK, NULL);
+    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 9, sizeof(VALUE_TYPE) * WARP_PER_BLOCK, NULL);
+    err |= clSetKernelArg(ocl_kernel_sptrsv_executor, 10, sizeof(cl_int), (void*)&wpb);
 
 
     double time_opencl_solve = 0;
@@ -290,16 +291,16 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
         err = clEnqueueWriteBuffer(ocl_command_queue, d_left_sum, CL_TRUE, 0, m * rhs * sizeof(VALUE_TYPE), left_sum, 0, NULL, NULL);
         if(err != CL_SUCCESS) {printf("OpenCL ERROR CODE = %i\n", err); return err;}
 
-        if (rhs == 1)
-        {
-            num_threads = WARP_PER_BLOCK * WARP_SIZE;
-            num_blocks = ceil ((double)m / (double)(num_threads/WARP_SIZE));
-            szLocalWorkSize[0]  = num_threads;
-            szGlobalWorkSize[0] = num_blocks * szLocalWorkSize[0];
-            err = clEnqueueNDRangeKernel(ocl_command_queue, ocl_kernel_sptrsv_executor, 1,
+
+        num_threads = WARP_PER_BLOCK * WARP_SIZE;
+        num_blocks = ceil ((double)m / (double)(num_threads/WARP_SIZE));
+        szLocalWorkSize[0]  = num_threads;
+        szGlobalWorkSize[0] = num_blocks * szLocalWorkSize[0];
+
+        err = clEnqueueNDRangeKernel(ocl_command_queue, ocl_kernel_sptrsv_executor, 1,
                                          NULL, szGlobalWorkSize, szLocalWorkSize, 0, NULL, &ceTimer);
-            if(err != CL_SUCCESS) { printf("ocl_kernel_sptrsv_executor kernel run error = %i\n", err); return err; }
-        }
+        if(err != CL_SUCCESS) { printf("ocl_kernel_sptrsv_executor kernel run error = %i\n", err); return err; }
+
 
         err = clWaitForEvents(1, &ceTimer);
         if(err != CL_SUCCESS) { printf("event error = %i\n", err); return err; }
@@ -309,7 +310,6 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     }
 
     time_opencl_solve /= BENCH_REPEAT;
-    double flop = 2*(double)rhs*(double)nnzTR;
 
     err = clEnqueueReadBuffer(ocl_command_queue, d_x, CL_TRUE, 0, n * rhs * sizeof(VALUE_TYPE), x, 0, NULL, NULL);
     if(err != CL_SUCCESS) {printf("OpenCL ERROR CODE = %i\n", err); return err;}
@@ -330,7 +330,6 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     return time_opencl_solve / 1000.;
 }
 
-//#endif
 
 
 

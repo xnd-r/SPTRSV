@@ -40,7 +40,7 @@ def get_times(filename, algos, matrices, repeats, threads):
 				snodes = m[:-6] + "snodes"
 				for t in threads:
 					print(t)
-					string = prefix + os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + t)
+					string = prefix + os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + t + " 100")
 					print(string)
 					log, time = min_res(string, repeats=repeats)
 					global_log += log
@@ -53,12 +53,12 @@ def get_times(filename, algos, matrices, repeats, threads):
 
 def main():
 	filename = os.path.join("code", "SPTRSV")
-	algos = ["barrier", "mkl"]
+	algos = ["barrier"]
 	threads = ["1", "2", "4", "8", "16", "24", "32", "64"]
 	matrices = glob(os.path.join(os.getcwd(), "matrices", "bin", "*"))
 	assert len(matrices) % 2 == 0
 	matrices = list(filter(lambda x: x.endswith('.matrix'), matrices))
-	repeats = 7
+	repeats = 5
 
 	get_times(filename, algos, matrices, repeats, threads)
 

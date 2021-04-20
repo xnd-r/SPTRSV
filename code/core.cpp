@@ -14,54 +14,60 @@ double base_gauss_lower(int n, double* val, uint64_t* row_index, int* col, doubl
 	return omp_get_wtime() - t1;
 }
 
-double base_gauss_upper(int n, double* val, uint64_t* row_index, int* col, double* x, double* b) {
+double base_gauss_upper(int n, double* val, uint64_t* row_index, int* col, double* x, double* b, int rhs) {
 	double sum;
 	double t1 = omp_get_wtime();
-	x[n - 1] = b[n - 1] / val[row_index[n] - 1];
-	for (int ir = n - 2; ir >= 0; ir--) {
-		sum = 0.;
-		for (int j = row_index[ir] + 1; j < row_index[ir + 1]; ++j) {
-			sum += val[j] * x[col[j]];
+	for (int rh = 0; rh < rhs; ++rh){
+		x[n * (rh + 1) - 1] = b[n * (rh + 1) - 1] / val[row_index[n] - 1];
+		for (int ir = n - 2; ir >= 0; ir--) {
+			sum = 0.;
+			for (int j = row_index[ir] + 1; j < row_index[ir + 1]; ++j) {
+				sum += val[j] * x[col[j] + rh * n];
+			}
+			x[ir + rh * n] = (b[ir + rh * n] - sum) / val[row_index[ir]];
 		}
-		x[ir] = (b[ir] - sum) / val[row_index[ir]];
 	}
 	return omp_get_wtime() - t1;
 }
 
-void get_tr_part_upper(int isn, int dim, double* x, double* val, int* row, uint64_t* col) {
-	x[isn + dim - 1] = x[isn + dim - 1] / val[col[isn + dim - 1]];
+void get_tr_part_upper(int isn, int dim, double* x, double* val, int* row, uint64_t* col, int global_shift) {
+	x[global_shift + isn + dim - 1] = x[global_shift + isn + dim - 1] / val[col[isn + dim - 1]];
 	double sum;
 	int cnt = 0;
 	for (int j = isn + dim - 2; j >= isn; --j) {
 		sum = 0.;
 		for (int k = col[j] + 1; k <= col[j] + 1 + cnt; ++k) {
-			sum += val[k] * x[row[k]];
+			sum += val[k] * x[global_shift + row[k]];
 		}
-		x[j] = (x[j] - sum) / val[col[j]];
+		x[global_shift + j] = (x[global_shift + j] - sum) / val[col[j]];
 		cnt++;
 	}
 }
 
-void get_rect_part_upper(int isn, int dim, double* x, double* val, int* row, uint64_t* col) {
+void get_rect_part_upper(int isn, int dim, double* x, double* val, int* row, uint64_t* col, int global_shift) {
 	double sum;
 	int cnt = 0;
 	double t1 = omp_get_wtime();
 	for (int i = isn; i < isn + dim; ++i) {
 		sum = 0.;
 		for (int j = col[i] + dim - cnt; j < col[i + 1]; ++j) {
-			sum += val[j] * x[row[j]];
+			sum += val[j] * x[global_shift + row[j]];
 		}
-		x[i] -= sum;
+		x[global_shift + i] -= sum;
 		cnt++;
 	}
 }
 
-double supernodal_upper(size_t sn, int* supernodes, double* x, double* val, int* row, uint64_t* col_index) {
+double supernodal_upper(size_t sn, int* supernodes, double* x, double* val, int* row, uint64_t* col_index, int n, int rhs) {
 	double t1 = omp_get_wtime();
-	for (int i = (int)sn - 1; i >= 0; --i) {
-		get_rect_part_upper(supernodes[i], supernodes[i + 1] - supernodes[i], x, val, row, col_index);
-		get_tr_part_upper(supernodes[i], supernodes[i + 1] - supernodes[i], x, val, row, col_index);
+	int global_shift = 0;
+	for (int rh = 0; rh < rhs; ++rh){
+		global_shift = rh * n;
+		for (int i = (int)sn - 1; i >= 0; --i) {
+			get_rect_part_upper(supernodes[i], supernodes[i + 1] - supernodes[i], x, val, row, col_index, global_shift);
+			get_tr_part_upper(supernodes[i], supernodes[i + 1] - supernodes[i], x, val, row, col_index, global_shift);
 
+		}
 	}
 	return omp_get_wtime() - t1;
 }
@@ -94,7 +100,7 @@ double ccs2ccs_pad(double* val, int* row, uint64_t* col_index, double* val_pad, 
 }
 
 
-double supernodal_blas_upper(int n, int nz, size_t sn, int* supernodes, double* x, double* val, uint64_t* row, int* col_index) {
+double supernodal_blas_upper(int n, int nz, size_t sn, int* supernodes, double* x, double* val, uint64_t* row, int* col_index, int rhs) {
 	int tr_dim;
 	int shift = 0;
 	int rec_dim;
@@ -102,25 +108,30 @@ double supernodal_blas_upper(int n, int nz, size_t sn, int* supernodes, double* 
 	double* B = new double[n] {0.};
 	double* c = new double[n] {0.};
 	double t1 = omp_get_wtime();
-	for (int i = (int)sn - 1; i >= 0; --i) {
-		tr_dim = supernodes[i + 1] - supernodes[i];
-		shift = col_index[supernodes[i]];
-		lda = (col_index[supernodes[i + 1]] - col_index[supernodes[i]]) / tr_dim; // TODO: refactor
-		rec_dim = col_index[supernodes[i] + 1] - col_index[supernodes[i]] - tr_dim;
+	int global_shift = 0;
 
-		for (int i = 0; i < rec_dim; ++i) {
-			B[i] = x[row[shift + tr_dim + i]];
+	for (int rh = 0; rh < rhs; ++rh){
+		global_shift = rh * n;
+		for (int i = (int)sn - 1; i >= 0; --i) {
+			tr_dim = supernodes[i + 1] - supernodes[i];
+			shift = col_index[supernodes[i]];
+			lda = (col_index[supernodes[i + 1]] - col_index[supernodes[i]]) / tr_dim; // TODO: refactor
+			rec_dim = col_index[supernodes[i] + 1] - col_index[supernodes[i]] - tr_dim;
+
+			for (int i = 0; i < rec_dim; ++i) {
+				B[i] = x[global_shift + row[shift + tr_dim + i]];
+			}
+
+			cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+				tr_dim, 1, rec_dim, 1., val + shift + tr_dim, lda, B, 1, 1., c, 1);
+
+			for (int k = 0; k < tr_dim; ++k) {
+				x[global_shift + supernodes[i] + k] -= c[k];
+				c[k] = 0.;
+			}
+			cblas_dtrsm(CblasRowMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
+				tr_dim, 1, 1., val + shift, lda, x + global_shift + supernodes[i], ldb);
 		}
-
-		cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-			tr_dim, 1, rec_dim, 1., val + shift + tr_dim, lda, B, 1, 1., c, 1);
-
-		for (int k = 0; k < tr_dim; ++k) {
-			x[supernodes[i] + k] -= c[k];
-			c[k] = 0.;
-		}
-		cblas_dtrsm(CblasRowMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-			tr_dim, 1, 1., val + shift, lda, x + supernodes[i], ldb);
 	}
 	double t2 = omp_get_wtime() - t1;
 	delete[] B;
@@ -157,7 +168,7 @@ int setLevelUpAndGetMaxLevel(int n, int* col, uint64_t* row_index, uint64_t* lev
 }
 
 // Authors: Dmitriy Akhmedzhanov, Alexander Romanov
-double gaussBarrierUp(int n, double* x, double* b, double* val, int* col, uint64_t* row, int num_of_threads)
+double gaussBarrierUp(int n, double* x, double* b, double* val, int* col, uint64_t* row, int num_of_threads, int rhs)
 {
 	uint64_t index_top, index_low, vertex;
 	double sum;
@@ -221,7 +232,7 @@ double gaussBarrierUp(int n, double* x, double* b, double* val, int* col, uint64
 	DEBUG_INFO("dag building elapsed time is %lf sec\n", t2);
 	DEBUG_INFO("maxLevel: %lu \n", maxLevel);
 	double t3 = omp_get_wtime();
-	for (int bi = 0; bi < 1; bi++)
+	for (int bi = 0; bi < rhs; bi++)
 	{
 #pragma omp parallel private(vertex, sum, index_low, index_top)
 		for (int i = 1; i < maxLevel + 1; i++)
