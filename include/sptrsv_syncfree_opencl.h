@@ -14,6 +14,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
                                const int            n,
                                const int            nnzTR,
                                VALUE_TYPE    *x,
-                               const VALUE_TYPE    *b);
+                               const VALUE_TYPE    *b,
+                               const int rhs);
 
 #endif //SPARSEPROJECT_SPTRSV_SYNCFREE_OPENCL_H

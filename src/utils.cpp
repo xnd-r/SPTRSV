@@ -81,11 +81,13 @@ double fill_x_b(int n, double** x, double** b, int rhs) {
 	double t1 = omp_get_wtime();
 	(*x) = (double*)malloc(n * sizeof(double) * rhs);
 	(*b) = (double*)malloc(n * sizeof(double) * rhs);
+	// srand(1984);
 
 	#pragma omp parallel for num_threads(omp_get_max_threads())
 	for (int i = 0; i < n * rhs; ++i) {
 		//(*b)[i] = (*x)[i] = (double)rand() / RAND_MAX;
-		(*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
+		// (*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
+		(*b)[i] = (*x)[i] = 1.;
 	}
 	return omp_get_wtime() - t1;
 }
@@ -220,7 +222,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			}
 
 			double t_sync_free = sptrsv_syncfree_opencl(
-				*col_t, row_t_int, *val_t, *n, *n, *nz, *x, *b);
+				*col_t, row_t_int, *val_t, *n, *n, *nz, *x, *b, rhs);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
 		}
 		else if (strcmp(algo_type, "mkl") == 0) {
