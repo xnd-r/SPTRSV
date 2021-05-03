@@ -7,9 +7,6 @@
 #include <string.h>
 #include <cmath>
 #include "core.h"
-#include "sptrsv_syncfree_serialref.h"
-#include "sptrsv_syncfree_opencl.h"
-#include "sptrsv_syncfree2_opencl.h"
 
 #define DEBUG_INFO(f, args...) fprintf(stderr, "%s_%s\t%s:%d:%s():\t\t" f, __DATE__, __TIME__, __FILE__, __LINE__, __func__, ##args);
 

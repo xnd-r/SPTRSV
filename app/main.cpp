@@ -3,7 +3,7 @@
 int main(int argc, char **argv) {
   if (argc < 6) {
     std::cout << "Usage:\n\nalgo_type (can be \"base\", \"custom\", \"blas\", "
-                 "\"barrier\", \"syncfree\", \"mkl\")\n";
+                 "\"barrier\", \"syncfree\", \"write_first\", \"mkl\")\n";
     std::cout << "full path to matrix-file (can be *.mtx, *.matrix, *.txt)"
               << std::endl;
     std::cout << "full path to supernodes-file (can be *.snodes)" << std::endl;
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
       &row_pad, &col_pad, &val_pad, &row_t, &col_t, &val_t, &x, &b, &sn,
       &snodes, nthreads, nrhs);
 
-  if (argc == 7){
+  if (argc >= 7){
     const char* is_check = argv[6];
     if (strcmp(is_check, "check") == 0){
       double *x_check = new double[n * nrhs]{0.};
@@ -36,10 +36,15 @@ int main(int argc, char **argv) {
         int_row[i] = (int)row[i];
       }
       compare("forward", n, int_row, col, val, x, b, x_check, nrhs);
-      // std::cout << "x_custom x_check\n";
-      // for (int i = 0; i < n * nrhs; ++i){
-      //   std::cout << x[i] << " " << x_check[i] << "\n";
-      // }
+    if (argc == 8){
+      const char* is_verbose = argv[7];
+      if (strcmp(is_verbose, "verbose") == 0){
+        std::cout << "x_custom x_check\n";
+        for (int i = 0; i < n * nrhs; ++i){
+          std::cout << x[i] << " " << x_check[i] << "\n";
+        }
+      }
+    }
       delete[] x_check;
       delete[] int_row;
     }

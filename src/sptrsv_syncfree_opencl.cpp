@@ -5,13 +5,13 @@
 
 double sptrsv_syncfree_opencl (int           *cscColPtrTR,
                             int           *cscRowIdxTR,
-                            const VALUE_TYPE    *cscValTR,
-                            const int            m,
-                            const int            n,
-                            const int            nnzTR,
-                                  VALUE_TYPE    *x,
-                            const VALUE_TYPE    *b,
-                            const int rhs)
+                            VALUE_TYPE    *cscValTR,
+                            int            m,
+                            int            n,
+                            int            nnzTR,
+                            VALUE_TYPE    *x,
+                            VALUE_TYPE    *b,
+                            int rhs)
 {
     const int device_id = 1;
     if (m != n)
@@ -151,7 +151,7 @@ double sptrsv_syncfree_opencl (int           *cscColPtrTR,
     cl_kernel  ocl_kernel_sptrsv_executor;
     cl_kernel  ocl_kernel_sptrsm_executor;
     ocl_kernel_sptrsv_analyser = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_analyser", &err);
-    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel analyzer ERROR CODE = %i\n", err); return err;}
+    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel analyser ERROR CODE = %i\n", err); return err;}
     ocl_kernel_sptrsv_executor = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_executor", &err);
     if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel trsv executor ERROR CODE = %i\n", err); return err;}
     ocl_kernel_sptrsm_executor = clCreateKernel(ocl_program_sptrsv, "sptrsm_syncfree_opencl_executor", &err);

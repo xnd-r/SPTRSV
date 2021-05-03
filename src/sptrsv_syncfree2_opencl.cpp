@@ -1,7 +1,6 @@
 #include "include/common.h"
 #include "include/utils.h"
 #include "include/basiccl.h"
-#include "include/sptrsv_syncfree2_opencl.h"
 
 double sptrsv_syncfree2_opencl (int           *cscColPtrTR,
                             int           *cscRowIdxTR,
@@ -150,7 +149,7 @@ double sptrsv_syncfree2_opencl (int           *cscColPtrTR,
     cl_kernel  ocl_kernel_sptrsv_analyser;
     cl_kernel  ocl_kernel_sptrsv_executor;
     ocl_kernel_sptrsv_analyser = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_analyser", &err);
-    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel analyzer ERROR CODE = %i\n", err); return err;}
+    if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel analyser ERROR CODE = %i\n", err); return err;}
     ocl_kernel_sptrsv_executor = clCreateKernel(ocl_program_sptrsv, "sptrsv_syncfree_opencl_executor", &err);
     if(err != CL_SUCCESS) {printf("OpenCL clCreateKernel executor ERROR CODE = %i\n", err); return err;}
 

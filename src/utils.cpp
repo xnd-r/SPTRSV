@@ -1,6 +1,6 @@
 #include "include/utils.h"
 #include <iostream>
-
+#include "include/sptrsv_syncfree_opencl.h"
 
 double read_csr(const char* filename, int* n, unsigned long long* nz, uint64_t** row_index, int** col, double** val) {
 	DEBUG_INFO("Matrix: %s\n", filename);
@@ -86,8 +86,8 @@ double fill_x_b(int n, double** x, double** b, int rhs) {
 	// #pragma omp parallel for num_threads(omp_get_max_threads())
 	for (int i = 0; i < n * rhs; ++i) {
 		//(*b)[i] = (*x)[i] = (double)rand() / RAND_MAX;
-		(*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
-		// (*b)[i] = (*x)[i] = 1.;
+		// (*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
+		(*b)[i] = (*x)[i] = 1.;
 	}
 	return omp_get_wtime() - t1;
 }
@@ -181,14 +181,8 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			double t_barrier_upper = gaussBarrierUp(*n, *x, *b, *val, *col, *row, nthreads, rhs);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_barrier_upper);
 		}
-		else if (strcmp(algo_type, "syncfree") == 0) {
-			//(*col_t) = (int*)malloc(*nz * sizeof(int));
-			//memset(col_t, 0, *nz * sizeof(int));
-			//(*row_t) = (uint64_t*)malloc((*n + 1) * sizeof(uint64_t));
-			//memset(row_t, 0, (*n + 1) * sizeof(uint64_t));
-			//(*val_t) = (double*)malloc(*nz * sizeof(double));
-			//memset(val_t, 0., *nz * sizeof(double));
-
+		else if (strcmp(algo_type, "write_first") == 0) {
+			DEBUG_INFO("Algorithm: Write First\n");
 			*val_t = new double[*nz]{ 0. };
 			*col_t = new int[*n + 1]{ 0 };
 			*row_t = new uint64_t[*nz]{ 0 };
@@ -196,25 +190,40 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			double t_trasnpose = transpose(*n, *nz, *val, *col, *row, *val_t, *row_t, *col_t);
 			DEBUG_INFO("Transposition finished. Time: %f\n", t_trasnpose);
 
-			//std::cout << "\n";
-			//for (int i = 0; i < *nz; ++i) {
-			//	std::cout << *(*val_t + i) << " ";
-			//}
-			//std::cout << "\n";
-			//for (int i = 0; i < *nz; ++i) {
-			//	std::cout << *(*row_t + i) << " ";
-			//}
-			//std::cout << "\n";
-			//for (int i = 0; i < *n + 1; ++i) {
-			//	std::cout << *(*col_t + i) << " ";
-			//}
-			//std::cout << "\n";
-			//exit(1);
 
-//			DEBUG_INFO("Algorithm: Synchronization free\n");
-//			double t_sync_free = sptrsv_syncfree_serialref(
-//				*col_t, *row_t, *val_t, *n, *n, *nz, SUBSTITUTION_BACKWARD, 1, *x, *b);
-//			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
+			int* row_t_int = new int[*nz];
+			for (int i = 0; i < *nz; ++i) {
+				row_t_int[i] = *(*row_t+i);
+			}
+			//////////    Ly=b !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!, 	rhs === 1 always
+			double t_sync_free = sptrsv_syncfree3_opencl(
+				row_t_int, *col_t, *val_t, *n, *n, *nz, *x, *b);
+			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
+			delete[] row_t_int;
+		}
+		else if (strcmp(algo_type, "syncfree") == 0) {
+			DEBUG_INFO("Algorithm: Syncfree\n");
+			*val_t = new double[*nz]{ 0. };
+			*col_t = new int[*n + 1]{ 0 };
+			*row_t = new uint64_t[*nz]{ 0 };
+			DEBUG_INFO("Matrix transposition\n");
+			double t_trasnpose = transpose(*n, *nz, *val, *col, *row, *val_t, *row_t, *col_t);
+			DEBUG_INFO("Transposition finished. Time: %f\n", t_trasnpose);
+
+			// std::cout << "\n";
+			// for (int i = 0; i < *nz; ++i) {
+			// 	std::cout << *(*val + i) << " ";
+			// }
+			// std::cout << "\n";
+			// for (int i = 0; i < *nz; ++i) {
+			// 	std::cout << *(*col + i) << " ";
+			// }
+			// std::cout << "\n";
+			// for (int i = 0; i < *n + 1; ++i) {
+			// 	std::cout << *(*row + i) << " ";
+			// }
+			// std::cout << "\n";
+			// exit(1);
 
 			int* row_t_int = new int[*nz];
 			for (int i = 0; i < *nz; ++i) {
@@ -224,6 +233,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			double t_sync_free = sptrsv_syncfree_opencl(
 				*col_t, row_t_int, *val_t, *n, *n, *nz, *x, *b, rhs);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
+			delete[] row_t_int;
 		}
 		else if (strcmp(algo_type, "mkl") == 0) {
 			int *int_row = new int[*n + 1] {0};
@@ -280,7 +290,7 @@ void check_result(int n, double* x1, double* x2) {
 		sum += pow(x1[i] - x2[i], 2);
 		norm += x1[i] * x1[i];
 //		if (abs(x1[i] - x2[i]) > 1e-4) {
-//			DEBUG_INFO("Error: %d %f %f\n", i, x1[i], x2[i]);
+		// DEBUG_INFO("Error: %d %f %f\n", i, x1[i], x2[i]);
 //		}
 	}
 	DEBUG_INFO("Relative error: %f\n", sqrt(sum) / sqrt(norm));

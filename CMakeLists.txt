@@ -8,6 +8,7 @@ set(BLA_DEFINITIONS)
 if ("$ENV{MKLROOT}" STREQUAL "")
     message(FATAL_ERROR "MKLROOT is not set. Please source the Intel MKL mklvars.sh file.")
 endif()
+message("====> MKLROOT $ENV{MKLROOT}")
 
 option(MKL_USE_parallel "Use MKL parallel" True)
 option(MKL_USE_sdl "Single Dynamic Library or static/dynamic" False)
