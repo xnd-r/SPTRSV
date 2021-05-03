@@ -81,13 +81,13 @@ double fill_x_b(int n, double** x, double** b, int rhs) {
 	double t1 = omp_get_wtime();
 	(*x) = (double*)malloc(n * sizeof(double) * rhs);
 	(*b) = (double*)malloc(n * sizeof(double) * rhs);
-	// srand(1984);
+	srand(1984);
 
-	#pragma omp parallel for num_threads(omp_get_max_threads())
+	// #pragma omp parallel for num_threads(omp_get_max_threads())
 	for (int i = 0; i < n * rhs; ++i) {
 		//(*b)[i] = (*x)[i] = (double)rand() / RAND_MAX;
-		// (*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
-		(*b)[i] = (*x)[i] = 1.;
+		(*b)[i] = (*x)[i] = (double)(rand() % 10 + 1);
+		// (*b)[i] = (*x)[i] = 1.;
 	}
 	return omp_get_wtime() - t1;
 }
@@ -243,20 +243,24 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			descrA.mode = SPARSE_FILL_MODE_UPPER;
 			descrA.diag = SPARSE_DIAG_NON_UNIT;
 
-			DEBUG_INFO("Algorithm: mkl_sparse_d_trsv\n");
+			DEBUG_INFO("Algorithm: mkl_sparse_d_trsm\n");
 			mkl_set_num_threads(nthreads);
 			DEBUG_INFO("Number of threads: %d\n", nthreads);
 
 			double t1 = omp_get_wtime();
-			sparse_status_t status = mkl_sparse_d_trsv(SPARSE_OPERATION_NON_TRANSPOSE,
+			sparse_status_t status = mkl_sparse_d_trsm(
+				SPARSE_OPERATION_NON_TRANSPOSE,
 				1.,
 				csrA,
 				descrA,
+				SPARSE_LAYOUT_ROW_MAJOR,
 				*b,
-				*x);
+				rhs,
+				rhs,
+				*x,
+				rhs);
 			double t2 = omp_get_wtime();
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t2 - t1);
-			// std::cout << "Sparse_status_t: " << status << "\n";
 			delete[] int_row;
 		}
 		else {
@@ -284,7 +288,7 @@ void check_result(int n, double* x1, double* x2) {
 	//std::cout.precision(32);
 }
 
-void compare(const char* task_type, int n, int* row, int* col, double* val, double* x_custom, double* b, double* x_check) {
+void compare(const char* task_type, int n, int* row, int* col, double* val, double* x_custom, double* b, double* x_check, int rhs) {
 	if (strcmp(task_type, "forward") == 0) {
 		struct matrix_descr descrA;
 		sparse_matrix_t csrA;
@@ -303,12 +307,17 @@ void compare(const char* task_type, int n, int* row, int* col, double* val, doub
 
 		DEBUG_INFO("Algorithm: mkl_sparse_d_trsv\n");
 		double t1 = omp_get_wtime();
-		sparse_status_t status = mkl_sparse_d_trsv(SPARSE_OPERATION_NON_TRANSPOSE,
-			1.,
-			csrA,
-			descrA,
-			b,
-			x_check);
+			sparse_status_t status = mkl_sparse_d_trsm(
+				SPARSE_OPERATION_NON_TRANSPOSE,
+				1.,
+				csrA,
+				descrA,
+				SPARSE_LAYOUT_ROW_MAJOR,
+				b,
+				rhs,
+				rhs,
+				x_check,
+				rhs);
 		DEBUG_INFO("Algorithm finished. Time: %f\n", omp_get_wtime() - t1);
 		std::cout << "Sparse_status_t: " << status << "\n";
 		check_result(n, x_check, x_custom);

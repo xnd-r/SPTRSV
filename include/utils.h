@@ -31,4 +31,4 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 	int nthreads, int rhs);
 
 void check_result(int n, double* x1, double* x2);
-void compare(const char* task_type, int n, int* row, int* col, double* val, double* x, double* b, double* x_custom);
+void compare(const char* task_type, int n, int* row, int* col, double* val, double* x, double* b, double* x_custom, int rhs);

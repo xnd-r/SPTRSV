@@ -35,7 +35,11 @@ int main(int argc, char **argv) {
       for (int i = 0; i <= n; ++i) {
         int_row[i] = (int)row[i];
       }
-      compare("forward", n, int_row, col, val, x, b, x_check);
+      compare("forward", n, int_row, col, val, x, b, x_check, nrhs);
+      // std::cout << "x_custom x_check\n";
+      // for (int i = 0; i < n * nrhs; ++i){
+      //   std::cout << x[i] << " " << x_check[i] << "\n";
+      // }
       delete[] x_check;
       delete[] int_row;
     }
