@@ -132,6 +132,8 @@ double sptrsv_syncfree3_opencl (int           *csrColIdx,
       size_t buildLogSize = 0;
       clGetProgramBuildInfo(ocl_program_sptrsv, cdGpuDevices[device_id],
                             CL_PROGRAM_BUILD_LOG, 0, NULL, &buildLogSize);
+      // TODO: Fix BuildLog
+      printf("%zu\n", buildLogSize);
       cl_char *buildLog = new cl_char[buildLogSize];
       if (buildLog) {
         clGetProgramBuildInfo(ocl_program_sptrsv, cdGpuDevices[device_id],

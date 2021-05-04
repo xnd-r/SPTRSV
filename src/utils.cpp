@@ -183,21 +183,14 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 		}
 		else if (strcmp(algo_type, "write_first") == 0) {
 			DEBUG_INFO("Algorithm: Write First\n");
-			*val_t = new double[*nz]{ 0. };
-			*col_t = new int[*n + 1]{ 0 };
-			*row_t = new uint64_t[*nz]{ 0 };
-			DEBUG_INFO("Matrix transposition\n");
-			double t_trasnpose = transpose(*n, *nz, *val, *col, *row, *val_t, *row_t, *col_t);
-			DEBUG_INFO("Transposition finished. Time: %f\n", t_trasnpose);
 
-
-			int* row_t_int = new int[*nz];
-			for (int i = 0; i < *nz; ++i) {
-				row_t_int[i] = *(*row_t+i);
+			int* row_t_int = new int[*n + 1];
+			for (int i = 0; i <= *n; ++i) {
+				row_t_int[i] = *(*row+i);
 			}
-			//////////    Ly=b !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!, 	rhs === 1 always
+			// rhs === 1 always
 			double t_sync_free = sptrsv_syncfree3_opencl(
-				row_t_int, *col_t, *val_t, *n, *n, *nz, *x, *b);
+				row_t_int, *col, *val, *n, *n, *nz, *x, *b);
 			DEBUG_INFO("Algorithm finished. Time: %f\n", t_sync_free);
 			delete[] row_t_int;
 		}
