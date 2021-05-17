@@ -142,6 +142,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 
 		double t_read_csr = read_csr(matrix_file, n, nz, row, col, val);
 		DEBUG_INFO("Matrix read. Time: %f\n", t_read_csr);
+		DEBUG_INFO("N = %d; NZ = %llu; Sparsity = %lf\n", *n, *nz, (2. * *nz) / (*n * *n + *n));
 		double t_fill_x_b = fill_x_b(*n, x, b, rhs);
 		DEBUG_INFO("Vectors x, b filled. Time: %f\n", t_fill_x_b);
 
