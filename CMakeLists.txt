@@ -16,8 +16,11 @@ set(MKL_USE_interface "lp64" CACHE STRING "for Intel(R)64 compatible arch: ilp64
 
 if (BLA_VENDOR MATCHES "_seq")
     set(MKL_USE_parallel OFF)
+    message("====>set(MKL_USE_parallel OFF)")
+
 else()
     set(MKL_USE_parallel ON)
+    message("====>set(MKL_USE_parallel ON)")
 endif()
 
 find_package(MKL REQUIRED)

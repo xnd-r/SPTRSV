@@ -25,7 +25,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 	uint64_t** row_pad, int** col_index_pad, double** val_pad,
 	uint64_t** row_t, int** col_t, double** val_t,
 	double** x, double** b, int* sn, int** snodes,
-	int nthreads, int rhs);
+	int nthreads, int rhs, bool opt);
 
-void check_result(int n, double* x1, double* x2);
-void compare(const char* task_type, int n, int* row, int* col, double* val, double* x, double* b, double* x_custom, int rhs);
+void check_result(int n, double* x1, double* x2, int rhs, bool col_major);
+void compare(const char* task_type, int n, int* row, int* col, double* val, double* x, double* b, double* x_custom, int rhs, bool col_major);
