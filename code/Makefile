@@ -1,9 +1,13 @@
 CC=icpc
 
-INCLUDES=-I/common/cuda-11.2/include
+INCLUDES=-I/common/cuda-11.2/include -I"${MKLROOT}/include"
 
-OPENCL_LIBS=-L/common/cuda-11.2/lib64 -lOpenCL
+USING_LIBS=-L/common/cuda-11.2/lib64 -lOpenCL -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
 
-LIBS = $(OPENCL_LIBS)
+LIBS = $(USING_LIBS)
+
+$(info    MKLROOT is $(MKLROOT))
+
 make:
-	$(CC) -O3 *.cpp -qopenmp -mkl:parallel -std=gnu++11 -o SPTRSV $(INCLUDES) $(LIBS)
+	$(CC) -O3 *.cpp -qopenmp -DMKL_LP64 -Wextra -Wall -pedantic-errors -xAVX -qopt-report=5 -mkl=parallel -std=c++11 -o SPTRSV $(INCLUDES) $(LIBS)
+
