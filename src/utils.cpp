@@ -1,4 +1,5 @@
 #include "include/utils.h"
+#include <bits/stdint-uintn.h>
 #include <c++/7/bits/c++config.h>
 #include <cstddef>
 #include <cstdlib>
@@ -27,6 +28,35 @@ double read_csr(const char* filename, int* n, unsigned long long* nz, uint64_t**
 		fread(*val, sizeof(double), *nz, f);
 
 		fclose(f);
+	}
+	else if (ext == "mtx"){
+		std::ifstream file(filename);
+		while (file.peek() == '%') {
+			file.ignore(2048, '\n');
+		}
+
+		file >> *n >> *n >> *nz;
+		(*col) = (int*)malloc(*nz * sizeof(int));
+		(*row_index) = (uint64_t*)malloc((*n + 1) * sizeof(uint64_t));
+		(*val) = (double*)malloc(*nz * sizeof(double));
+		int col_i, row_i, cnt1 = 1;
+		uint64_t cnt = 0;
+		*(*row_index) = 0.;
+
+		for (int i = 0; i < *nz; ++i) {
+			file >> row_i >> col_i >> *(*val + i);
+			*(*col + i) = row_i - 1;
+			if (col_i == cnt1) {
+				cnt++;
+				continue;
+			}
+			else {
+				*(*row_index + cnt1) = cnt;
+				cnt++;
+				cnt1++;
+			}
+		}
+		*(*row_index + *n) = *nz;
 	}
 	else if (ext == "txt") {
 		std::ifstream file(filename);
