@@ -34,14 +34,14 @@ double base_gauss_upper(int n, double* val, uint64_t* row_index, int* col, doubl
 double base_gauss_upper_new(int n, double* val, uint64_t* row_index, int* col, double* x, double* b, int rhs) {
 	double sum;
 	double t1 = omp_get_wtime();
-	// #pragma ivdep
+	#pragma ivdep
 	for (int rh = 0; rh < rhs; ++rh){
 		x[n * (rh + 1) - 1] = b[n * (rh + 1) - 1] / val[row_index[n] - 1];
 	}
 	for (int rh = 0; rh < rhs; ++rh){
 		for (int ir = n - 2; ir >= 0; ir--) {
 			sum = 0.;
-			// #pragma ivdep
+			#pragma ivdep
 			for (int j = row_index[ir] + 1; j < row_index[ir + 1]; ++j) {
 				sum += val[j] * x[col[j] + rh * n];
 			}
@@ -105,7 +105,7 @@ double supernodal_upper_new(size_t sn, int* supernodes, double* x, double* val, 
 		for (int i = supernodes[snode_ind]; i < supernodes[snode_ind] + dim; ++i) {
 			for (int rh = 0; rh < rhs; ++rh){
 				sum = 0.;
-				// #pragma ivdep
+				#pragma ivdep
 				for (int j = col_index[i] + dim - cnt; j < col_index[i + 1]; ++j) {
 					sum += val[j] * x[rh * n + row[j]];
 				}
@@ -114,7 +114,7 @@ double supernodal_upper_new(size_t sn, int* supernodes, double* x, double* val, 
 			cnt++;
 		}
 
-		// #pragma ivdep
+		#pragma ivdep
 		for (int rh = 0; rh < rhs; ++rh){
                   x[rh * n + supernodes[snode_ind] + dim - 1] =
                       x[rh * n + supernodes[snode_ind] + dim - 1] /
@@ -124,7 +124,7 @@ double supernodal_upper_new(size_t sn, int* supernodes, double* x, double* val, 
 		for (int j = supernodes[snode_ind] + dim - 2; j >= supernodes[snode_ind]; --j) {
 			for (int rh = 0; rh < rhs; ++rh){
 				sum = 0.;
-				// #pragma ivdep
+				#pragma ivdep
 				for (int k = col_index[j] + 1; k <= col_index[j] + 1 + cnt; ++k) {
 					sum += val[k] * x[rh * n + row[k]];
 				}

@@ -9,5 +9,5 @@ LIBS = $(USING_LIBS)
 $(info    MKLROOT is $(MKLROOT))
 
 make:
-	$(CC) -O3 *.cpp -qopenmp -DMKL_LP64 -Wextra -Wall -pedantic-errors -qopt-report=5 -mkl=parallel -std=c++11 -o SPTRSV $(INCLUDES) $(LIBS)
+	$(CC) -O3 *.cpp -qopenmp -DMKL_LP64 -Wextra -Wall -pedantic-errors -qopt-report=5 -xAVX -mkl=parallel -std=c++11 -o SPTRSV $(INCLUDES) $(LIBS)
 
