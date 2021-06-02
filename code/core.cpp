@@ -276,6 +276,7 @@ int setLevelUpAndGetMaxLevel(int n, int* col, uint64_t* row_index, uint64_t* lev
 // Authors: Dmitriy Akhmedzhanov, Alexander Romanov
 double barrier_upper(int n, double* x, double* b, double* val, int* col, uint64_t* row, int num_of_threads, int rhs)
 {
+	omp_set_num_threads(num_of_threads);
 	uint64_t index_top, index_low, vertex;
 	double sum;
 	double t1, t2;

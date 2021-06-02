@@ -30,7 +30,7 @@ def min_res(name, repeats=3):
 			min_log = log
 	return min_log, min_time
 
-def get_times(filename, algos, matrices, repeats, threads):
+def get_times(filename, algos, matrices, repeats, threads, opt):
 	run_name = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
 	os.makedirs(os.path.join("experiments", run_name))
 	global_log = ""
@@ -47,7 +47,7 @@ def get_times(filename, algos, matrices, repeats, threads):
 				snodes = m[:-6] + "snodes"
 				for t in threads:
 					print(t)
-					string = prefix + os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + t + " 10 opt true")
+					string = prefix + os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + t + " 100 " + opt)
 					print(string)
 					log, time = min_res(string, repeats=repeats)
 					global_log += log
@@ -60,15 +60,17 @@ def get_times(filename, algos, matrices, repeats, threads):
 
 def main():
 	filename = os.path.join("code", "SPTRSV")
-	algos = ["barrier"]
+	algos = ["mkl"]
 	threads = ["1", "2", "4", "8", "16", "24", "32"]
 	matrices = glob("./matrices/bin/*")
 	print(matrices)
 	assert len(matrices) % 2 == 0
 	matrices = list(filter(lambda x: not x.endswith('.snodes'), matrices))
+	matrices = list(filter(lambda x: x.endswith('fem.matrix'), matrices))
 	repeats = 3
 
-	get_times(filename, algos, matrices, repeats, threads)
+	get_times(filename, algos, matrices, repeats, threads, "opt_false")
+	# get_times(filename, algos, matrices, repeats, threads, "opt_true")
 
 
 if __name__ == "__main__":

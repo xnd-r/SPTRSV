@@ -23,10 +23,11 @@ int main(int argc, char **argv) {
   const char *algo_type = argv[1];
   const char *mtx_path = argv[2];
   const char *snodes_path = argv[3];
-  const int nthreads = std::atoi(argv[4]);
-  const int nrhs = std::atoi(argv[5]);
+  const int nthreads = atoi(argv[4]);
+  const int nrhs = atoi(argv[5]);
   const char* serial_opt = argv[6];
 
+  mkl_set_num_threads(nthreads);
   bool optimized_algo = false;
 
   if (strcmp(serial_opt, "opt_true") == 0){

@@ -291,7 +291,7 @@ void run(const char* task_type, const char* algo_type, const char* matrix_file, 
 			DEBUG_INFO("Algorithm: mkl_sparse_d_trsm\n");
 			// DEBUG_INFO("mkl_get_max_threads: %d\n", mkl_get_max_threads());
 			// mkl_set_dynamic(0);
-			// mkl_set_num_threads(nthreads);
+			mkl_set_num_threads(nthreads);
 			DEBUG_INFO("Number of threads: %d\n", nthreads);
 
 			double t1 = omp_get_wtime();
