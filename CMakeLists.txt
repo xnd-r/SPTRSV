@@ -8,6 +8,7 @@ set(BLA_DEFINITIONS)
 if ("$ENV{MKLROOT}" STREQUAL "")
     message(FATAL_ERROR "MKLROOT is not set. Please source the Intel MKL mklvars.sh file.")
 endif()
+message("====> MKLROOT $ENV{MKLROOT}")
 
 option(MKL_USE_parallel "Use MKL parallel" True)
 option(MKL_USE_sdl "Single Dynamic Library or static/dynamic" False)
@@ -15,8 +16,11 @@ set(MKL_USE_interface "lp64" CACHE STRING "for Intel(R)64 compatible arch: ilp64
 
 if (BLA_VENDOR MATCHES "_seq")
     set(MKL_USE_parallel OFF)
+    message("====>set(MKL_USE_parallel OFF)")
+
 else()
     set(MKL_USE_parallel ON)
+    message("====>set(MKL_USE_parallel ON)")
 endif()
 
 find_package(MKL REQUIRED)
@@ -43,11 +47,17 @@ if(OpenMP_FOUND)
     message(STATUS "OpenMP Libraries: ${OpenMP_CXX_LIBRARIES}")
 endif()
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/gtest")
+set(LIBRARY_DEPS "gtest")
+
 get_filename_component(DIR_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 set(MODULE      "${DIR_NAME}")
 set(LIBRARY     "lib_${MODULE}")
 set(APPLICATION "app_${MODULE}")
+set(TESTS       "test_${MODULE}")
 
 
 add_subdirectory(src)
 add_subdirectory(app)
+add_subdirectory(test)

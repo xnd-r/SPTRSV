@@ -11,8 +11,15 @@ def single_launch(name):
 	proc.wait()
 	res = proc.communicate()
 	log = res[1].decode("utf-8")
-	time = float(log.split('\n')[-2].split("Time: ")[-1])
-	return log, time
+	try:
+		time = float(log.split('\n')[-2].split("Time: ")[-1])
+		return log, time
+	except ValueError as ve:
+		print(log)
+		with open(os.path.join(os.getcwd(), 'error_log.log'), 'w') as f:
+			f.write(log)
+		print("Runtime error. Exit")
+		exit(0)
 
 def min_res(name, repeats=3):
 	min_time = 1e6
@@ -24,7 +31,7 @@ def min_res(name, repeats=3):
 			min_log = log
 	return min_log, min_time
 
-def get_times(filename, algos, matrices, repeats, threads):
+def get_times(filename, algos, matrices, repeats):
 	run_name = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
 	os.makedirs("experiments", exist_ok=True)
 	os.makedirs(os.path.join("experiments", run_name), exist_ok=False)
@@ -37,10 +44,11 @@ def get_times(filename, algos, matrices, repeats, threads):
 		for m in matrices:
 			print(m)
 			f.write(os.path.basename(m) + ";")
-			snodes = m[:-4] + "_snodes.bin"
+			snodes = m[:-6] + "snodes"
 			for a in algos:
 				print(a)
-				string = os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " " + "1")
+				string = os.path.join(os.getcwd(), filename + " " + a + " " + m + " " + snodes + " 1 1 check")
+				print(string)
 				log, time = min_res(string, repeats=repeats)
 				global_log += log
 				global_log += "-"*100+"\n"
@@ -51,14 +59,13 @@ def get_times(filename, algos, matrices, repeats, threads):
 
 def main():
 	filename = os.path.join("build", "app", "SPTRSV")
-	algos = ["base", "custom", "blas", "barrier", "syncfree"]
-	threads = [1, 2, 4, 8, 16, 24, 32]
-	matrices = glob(os.path.join("matrices", "bin", "*"))
+	algos = ["base", "custom", "blas", "barrier", "syncfree", "write_first"]
+	matrices = glob(os.path.join(sys.argv[1], "*"))
 	assert len(matrices) % 2 == 0
-	matrices = list(filter(lambda x: not x.endswith('_snodes.bin'), matrices))
-	repeats = 7
+	matrices = list(filter(lambda x: not x.endswith('.snodes'), matrices))
+	repeats = 1
 
-	get_times(filename, algos, matrices, repeats, threads)
+	get_times(filename, algos, matrices, repeats)
 
 
 if __name__ == "__main__":

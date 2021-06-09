@@ -11,16 +11,16 @@
 #endif
 
 #ifndef BENCH_REPEAT
-#define BENCH_REPEAT 10
+#define BENCH_REPEAT 1
 #endif
 
 #ifndef WARP_SIZE
 #define WARP_SIZE   64
 #endif
 
-//#ifndef WARP_PER_BLOCK
-//#define WARP_PER_BLOCK   5
-//#endif
+#ifndef WARP_PER_BLOCK
+#define WARP_PER_BLOCK   1
+#endif
 
 #define SUBSTITUTION_FORWARD  0
 #define SUBSTITUTION_BACKWARD 1
